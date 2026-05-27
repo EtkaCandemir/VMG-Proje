@@ -1,0 +1,2 @@
+R2 Score for predicting Risk_Score_Equal: 1.0000
+R2 Score for predicting Risk_Score_Priority: 1.0000
