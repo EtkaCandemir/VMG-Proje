@@ -116,23 +116,23 @@ def main():
     
     # Define targets
     targets = {
-        'Priority Fixed (Primary)': 'Risk_Class_Priority',
-        'Equal Fixed (Primary)': 'Risk_Class_Equal',
-        'Priority Quantile (Secondary)': 'Risk_Class_Priority_Quantile',
-        'Equal Quantile (Secondary)': 'Risk_Class_Equal_Quantile'
+        'priority_fixed': ('Priority Fixed (Primary)', 'Risk_Class_Priority'),
+        'equal_fixed': ('Equal Fixed (Primary)', 'Risk_Class_Equal'),
+        'priority_quantile': ('Priority Quantile (Secondary)', 'Risk_Class_Priority_Quantile'),
+        'equal_quantile': ('Equal Quantile (Secondary)', 'Risk_Class_Equal_Quantile')
     }
     
     all_results = {}
     
     # Iterate through combinations
-    for target_name, target_col in targets.items():
+    for target_key, (target_name, target_col) in targets.items():
         y = df[target_col]
-        
+
         for fs_name, fs_cols in feature_sets.items():
             X = df[fs_cols]
-            
+
             print(f"\n========== {target_name} | {fs_name.replace('_', ' ').title()} ==========")
-            suffix = f"{target_name.split()[0].lower()}_{fs_name}"
+            suffix = f"{target_key}_{fs_name}"
             
             # Train models and save outputs
             res_df = train_and_evaluate(X, y, f"{target_name} ({fs_name})", suffix)
@@ -145,7 +145,7 @@ def main():
     print("FINAL COMPARISON: YEAR vs NO YEAR (F1 Macro Scores)")
     print("=================================================================\n")
     
-    for target_name in targets.keys():
+    for target_name, _ in targets.values():
         print(f"--- {target_name} ---")
         res_no_year = all_results[f"{target_name}_without_year"]
         res_with_year = all_results[f"{target_name}_with_year"]
