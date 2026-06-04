@@ -5,13 +5,16 @@ from docx import Document
 from docx.enum.section import WD_SECTION
 from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
+# pyrefly: ignore [missing-import]
 from docx.oxml import OxmlElement
+# pyrefly: ignore [missing-import]
 from docx.oxml.ns import qn
+# pyrefly: ignore [missing-import]
 from docx.shared import Inches, Pt, RGBColor
 
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "Tedarikci_Risk_Degerlendirmesi_Raporu.docx"
+OUT = ROOT / "Tedarikci_Risk_Degerlendirmesi_Raporu_REVIZE.docx"
 
 BLUE = RGBColor(46, 116, 181)
 DARK_BLUE = RGBColor(31, 77, 120)
@@ -177,11 +180,55 @@ def fmt_float(x):
 
 def model_rows(file_name):
     df = pd.read_csv(ROOT / file_name)
+    model_name_map = {
+        "Logistic Regression": "Lojistik Regresyon",
+        "Decision Tree": "Karar Ağacı",
+        "Random Forest": "Random Forest",
+        "K-Nearest Neighbors": "K-En Yakın Komşu",
+    }
     return [
-        [r["Model"], fmt_float(r["Accuracy"]), fmt_float(r["Precision_Macro"]),
+        [model_name_map.get(r["Model"], r["Model"]), fmt_float(r["Accuracy"]), fmt_float(r["Precision_Macro"]),
          fmt_float(r["Recall_Macro"]), fmt_float(r["F1_Macro"])]
         for _, r in df.iterrows()
     ]
+
+
+def appendix_inventory_rows():
+    rows = [
+        ("supplier_risk.csv", "Ham veri seti."),
+        ("supplier_risk_scored.csv", "Sabit eşik risk skorları eklenmiş veri seti."),
+        ("supplier_risk_scored_quantile.csv", "Kuantil sınıfları eklenmiş nihai veri seti."),
+        ("eda_supplier_risk.py", "Keşifçi veri analizi kodu."),
+        ("supplier_scoring.py", "Sabit eşik risk skorlama kodu."),
+        ("supplier_scoring_quantile.py", "Kuantil eşik sınıflandırma kodu."),
+        ("ml_modeling.py", "Pipeline tabanlı modelleme kodu."),
+        ("advanced_stats.py", "VIF ve R² hesaplama kodu."),
+        ("quantile_thresholds.csv", "Kuantil eşik değerleri."),
+        ("vif_results.csv", "VIF analizi çıktısı."),
+        ("r2_results.txt", "R² analizi çıktısı."),
+        ("model_comparison_priority_fixed_without_year.csv", "Ana model, öncelik ağırlıklı skor, Year hariç model karşılaştırması."),
+        ("model_comparison_equal_fixed_without_year.csv", "Ana model, eşit ağırlıklı skor, Year hariç model karşılaştırması."),
+        ("model_comparison_priority_quantile_without_year.csv", "Yan model, öncelik ağırlıklı skor, Year hariç model karşılaştırması."),
+        ("model_comparison_equal_quantile_without_year.csv", "Yan model, eşit ağırlıklı skor, Year hariç model karşılaştırması."),
+        ("model_comparison_priority_fixed_with_year.csv", "Year dahil karşılaştırmalı model çıktısı."),
+        ("model_comparison_equal_fixed_with_year.csv", "Year dahil karşılaştırmalı model çıktısı."),
+        ("model_comparison_priority_quantile_with_year.csv", "Year dahil karşılaştırmalı model çıktısı."),
+        ("model_comparison_equal_quantile_with_year.csv", "Year dahil karşılaştırmalı model çıktısı."),
+        ("risk_category_distribution.png", "Orijinal risk kategorisi dağılım görselleştirmesi."),
+        ("year_distribution.png", "Yıl dağılımı görselleştirmesi."),
+        ("correlation_heatmap.png", "Korelasyon ısı haritası."),
+        ("risk_class_comparison.png", "Sabit eşik risk sınıfları karşılaştırma grafiği."),
+        ("threshold_comparison.png", "Sabit eşik ve kuantil eşik karşılaştırma grafiği."),
+        ("confusion_matrices_priority_fixed_without_year.png", "Ana model öncelik ağırlıklı skor confusion matrix çıktısı."),
+        ("confusion_matrices_equal_fixed_without_year.png", "Ana model eşit ağırlıklı skor confusion matrix çıktısı."),
+        ("confusion_matrices_priority_quantile_without_year.png", "Yan model öncelik ağırlıklı skor confusion matrix çıktısı."),
+        ("confusion_matrices_equal_quantile_without_year.png", "Yan model eşit ağırlıklı skor confusion matrix çıktısı."),
+        ("rf_feature_importance_priority_fixed_without_year.png", "Ana model öncelik ağırlıklı skor Random Forest değişken önemleri."),
+        ("rf_feature_importance_equal_fixed_without_year.png", "Ana model eşit ağırlıklı skor Random Forest değişken önemleri."),
+        ("rf_feature_importance_priority_quantile_without_year.png", "Yan model öncelik ağırlıklı skor Random Forest değişken önemleri."),
+        ("rf_feature_importance_equal_quantile_without_year.png", "Yan model eşit ağırlıklı skor Random Forest değişken önemleri."),
+    ]
+    return [[name, desc] for name, desc in rows if (ROOT / name).exists()]
 
 
 def add_code_appendix(doc, file_name):
@@ -280,7 +327,7 @@ def build():
     add_bullets(doc, [
         "Sınıflandırma: Gözlemleri önceden tanımlanmış sınıflara atama işlemidir. Bu çalışmada Low Risk, Medium Risk ve High Risk sınıfları kullanılmıştır.",
         "Özellik mühendisliği: Ham değişkenlerden modelleme için anlamlı risk bileşenleri üretme sürecidir. Performans değişkenleri ters çevrilerek risk göstergesine dönüştürülmüştür.",
-        "Normalizasyon: Değişkenleri ortak ölçeğe taşıma işlemidir. Skor üretiminde MinMaxScaler, model pipeline içinde ise Logistic Regression ve KNN için StandardScaler kullanılmıştır.",
+        "Normalizasyon: Değişkenleri ortak ölçeğe taşıma işlemidir. Skor üretiminde MinMaxScaler, model pipeline içinde ise Lojistik Regresyon ve K-En Yakın Komşu için StandardScaler kullanılmıştır.",
         "Kuantil eşik: Gözlemleri veri dağılımına göre alt, orta ve üst dilimlere ayıran eşikleme yaklaşımıdır.",
     ])
     add_heading(doc, "4.2 Kullanılan Algoritmalar", 2)
@@ -311,7 +358,8 @@ def build():
         ["Eksik değer", f"{int(df.isna().sum().sum())}"],
         ["Tekrarlı satır", f"{int(df.duplicated().sum())}"],
     ], widths=[2.2, 4.1])
-    add_para(doc, "Talimat taslağında bazı yerlerde yıl aralığı ve sütun sayısı eski değerlerle yazılmıştır; bu raporda doğrudan mevcut CSV dosyasından doğrulanan güncel değerler kullanılmıştır.")
+    add_para(doc, "Veri setine ilişkin temel bilgiler doğrudan analiz edilen CSV dosyası üzerinden doğrulanmıştır.")
+    add_para(doc, "Eksik değer ve tekrarlı satır kontrollerinin ardından sayısal değişkenler kutu grafikleriyle incelenmiştir. Skor değişkenleri beklenen aralıklarda yer aldığı ve gözlemler tedarikçi performans farklılıklarını temsil ettiği için ayrıca aykırı değer silme işlemi uygulanmamıştır.")
     add_heading(doc, "5.2 Değişkenler", 2)
     add_table(doc, ["Değişken", "Tür", "Açıklama"], [
         ["Supplier_ID", "Tamsayı", "Tedarikçi kimlik numarası."],
@@ -365,17 +413,29 @@ def build():
         [r["Scoring_Method"], fmt_float(r["Low_Medium_Threshold"]), fmt_float(r["Medium_High_Threshold"])]
         for _, r in quantiles.iterrows()
     ], widths=[2.4, 2.0, 2.0])
-    add_para(doc, "Sabit eşikler risk skorunun teorik 0-1 aralığını eşit üç parçaya bölerken, kuantil eşikler veri dağılımını dengeli sınıflara ayırır. Sabit eşikte gözlemler Medium Risk sınıfında yoğunlaşmış, kuantil eşikte yaklaşık 594/594/612 dağılımı elde edilmiştir.")
+    add_para(doc, "Sabit eşik yöntemi, 0-1 aralığında üretilen risk skorunu teorik ve yorumlanabilir sınırlarla üç risk düzeyine ayırdığı için çalışmanın ana sınıflandırma yaklaşımı olarak ele alınmıştır. Kuantil eşik yöntemi ise sabit eşikte gözlenen sınıf yoğunlaşmasının sonuçlara etkisini incelemek ve sınıf dağılımına duyarlılığı test etmek amacıyla yan/karşılaştırmalı yaklaşım olarak kullanılmıştır.")
+    add_para(doc, "Sabit eşikte gözlemlerin Medium Risk sınıfında yoğunlaşması, bu yaklaşımın teorik ana eşik yapısını geçersiz kılmamaktadır; yalnızca veri setindeki risk skorlarının orta bölgede kümelendiğini göstermektedir. Kuantil eşik ise yaklaşık 594/594/612 dağılımıyla sınıf dengesini iyileştirir, ancak risk düzeylerini mutlak skor aralıklarından çok veri seti içindeki göreli sıralama üzerinden tanımlar.")
     add_image(doc, "risk_class_comparison.png", "Şekil 6. Eşit ve öncelik ağırlıklı sabit eşik risk sınıfları.", width=5.9)
     add_image(doc, "threshold_comparison.png", "Şekil 7. Sabit eşik ve kuantil eşik sınıflandırmalarının karşılaştırması.", width=5.9)
     add_heading(doc, "6.4 Makine Öğrenmesi Pipeline Yapısı", 2)
-    add_para(doc, "Modelleme aşamasında train-test ayrımı %80/%20 oranında yapılmış, random_state=42 seçilmiş ve hedef sınıf oranlarının korunması için stratify=y kullanılmıştır. Lojistik Regresyon ve KNN, StandardScaler içeren sklearn Pipeline yapısıyla kurulmuştur. Decision Tree ve Random Forest ölçeğe duyarlı olmadığından doğrudan kullanılmıştır.")
+    add_para(doc, "Modelleme aşamasında train-test ayrımı %80/%20 oranında yapılmış, random_state=42 seçilmiş ve hedef sınıf oranlarının korunması için stratify=y kullanılmıştır. Lojistik Regresyon ve K-En Yakın Komşu, StandardScaler içeren sklearn Pipeline yapısıyla kurulmuştur. Karar Ağacı ve Random Forest ölçeğe duyarlı olmadığından doğrudan kullanılmıştır.")
     add_table(doc, ["Model", "Ön işleme", "Gerekçe"], [
-        ["Logistic Regression", "StandardScaler + model", "Doğrusal modelin optimizasyonu ölçekten etkilenir."],
-        ["K-Nearest Neighbors", "StandardScaler + model", "Mesafe tabanlı olduğu için ortak ölçek gerekir."],
-        ["Decision Tree", "Ölçeklendirme yok", "Bölünme kuralları ölçekten bağımsızdır."],
+        ["Lojistik Regresyon", "StandardScaler + model", "Doğrusal modelin optimizasyonu ölçekten etkilenir."],
+        ["K-En Yakın Komşu", "StandardScaler + model", "Mesafe tabanlı olduğu için ortak ölçek gerekir."],
+        ["Karar Ağacı", "Ölçeklendirme yok", "Bölünme kuralları ölçekten bağımsızdır."],
         ["Random Forest", "Ölçeklendirme yok", "Ağaç tabanlı topluluk yöntemi ölçekten bağımsızdır."],
     ], widths=[2.0, 2.0, 2.5])
+    add_heading(doc, "6.5 Modelleme Ayarları ve Hiperparametreler", 2)
+    add_para(doc, "Modelleme aşamasında hiperparametre optimizasyonu yapılmamıştır. Varsayılan parametreler kullanılmış, yalnızca aşağıdaki açık ayarlar sabitlenmiştir.")
+    add_table(doc, ["Bileşen", "Ayar"], [
+        ["Train-test split", "80/20"],
+        ["random_state", "42"],
+        ["stratify", "y"],
+        ["Lojistik Regresyon", "StandardScaler + LogisticRegression(max_iter=1000, random_state=42)"],
+        ["Karar Ağacı", "DecisionTreeClassifier(random_state=42)"],
+        ["Random Forest", "RandomForestClassifier(random_state=42)"],
+        ["K-En Yakın Komşu", "StandardScaler + KNeighborsClassifier(default n_neighbors=5)"],
+    ], widths=[2.1, 4.2], font_size=8.7)
 
     add_heading(doc, "7. Sonuçlar ve Yorum", 1)
     add_heading(doc, "7.1 İstatistiksel Geçerlilik Testleri", 2)
@@ -383,21 +443,23 @@ def build():
     add_table(doc, ["Özellik", "VIF"], [[r["Feature"], f"{float(r['VIF']):.3f}"] for _, r in vif.iterrows()], widths=[4.5, 1.2])
     add_para(doc, "Tüm VIF değerleri 1.00 civarındadır. Genel kabul olarak VIF < 5 olması çoklu doğrusal bağlantı sorununun ciddi olmadığını gösterir. Bu nedenle seçilen yedi değişkenin risk skorlama sisteminde birlikte kullanılması istatistiksel olarak uygundur.")
     add_heading(doc, "7.1.2 R² Analizi", 3)
-    add_para(doc, "Risk_Score_Equal ve Risk_Score_Priority için hesaplanan R² değerleri 1.0000'dır. Bu sonuç beklenen bir bulgudur; çünkü sürekli risk skorları doğrudan seçilen risk bileşenlerinin matematiksel birleşimiyle üretilmiştir. Dolayısıyla R² sonucu modelin iç tutarlılığını doğrular.")
+    add_para(doc, "R² değerinin 1.0000 çıkması beklenen bir sonuçtur; çünkü Risk_Score_Equal ve Risk_Score_Priority doğrudan seçilen yedi değişkenin matematiksel birleşimiyle oluşturulmuştur. Bu nedenle bu analiz bağımsız bir tahmin başarısından ziyade, oluşturulan skorların seçilen değişkenlerle birebir ilişkili olduğunu göstermektedir.")
 
     add_heading(doc, "7.2 Ana Model Sonuçları: Sabit Eşik", 2)
     add_heading(doc, "7.2.1 Priority Fixed - Year Olmadan", 3)
     add_table(doc, ["Model", "Accuracy", "Precision", "Recall", "F1"], model_rows("model_comparison_priority_fixed_without_year.csv"), widths=[2.2, 1, 1, 1, 1])
     add_heading(doc, "7.2.2 Equal Fixed - Year Olmadan", 3)
     add_table(doc, ["Model", "Accuracy", "Precision", "Recall", "F1"], model_rows("model_comparison_equal_fixed_without_year.csv"), widths=[2.2, 1, 1, 1, 1])
-    add_para(doc, "Sabit eşik yaklaşımında sınıflar dengesizdir. Medium Risk sınıfında yoğunlaşma oluştuğu için bazı modeller uç sınıfları yakalamakta zorlanmıştır. Buna rağmen Lojistik Regresyon, risk sınıfının doğrusal skor mantığıyla üretilmiş olmasından dolayı en yüksek F1 performansını sağlamıştır.")
+    add_para(doc, "Sabit eşik yaklaşımında sınıflar dengesizdir. Medium Risk sınıfında yoğunlaşma oluştuğu için bazı modeller uç sınıfları yakalamakta zorlanmıştır. Ancak bu yoğunlaşma, sabit eşik yönteminin çalışmanın ana teorik sınıflandırma yaklaşımı olarak kullanılmasını geçersiz kılmaz; çünkü bu yöntem 0-1 risk skoru aralığını mutlak ve yorumlanabilir risk düzeylerine ayırmaktadır.")
+    add_para(doc, "Lojistik Regresyon modelinin yüksek performansı, hedef risk sınıflarının bu çalışmada oluşturulan doğrusal/ağırlıklı kompozit risk skoru mantığına dayanmasıyla açıklanabilir. Bu nedenle sonuçlar, dışsal ve bağımsız bir gerçek dünya risk etiketini tahmin etmekten çok, geliştirilen risk skorlama sisteminin makine öğrenmesi modelleri tarafından ne ölçüde öğrenilebilir olduğunu göstermektedir.")
 
     add_heading(doc, "7.3 Yan Model Sonuçları: Kuantil Eşik", 2)
     add_heading(doc, "7.3.1 Priority Quantile - Year Olmadan", 3)
     add_table(doc, ["Model", "Accuracy", "Precision", "Recall", "F1"], model_rows("model_comparison_priority_quantile_without_year.csv"), widths=[2.2, 1, 1, 1, 1])
     add_heading(doc, "7.3.2 Equal Quantile - Year Olmadan", 3)
     add_table(doc, ["Model", "Accuracy", "Precision", "Recall", "F1"], model_rows("model_comparison_equal_quantile_without_year.csv"), widths=[2.2, 1, 1, 1, 1])
-    add_para(doc, "Kuantil eşik yaklaşımı sınıfları dengeli hale getirdiği için Random Forest ve KNN gibi modellerin performansı daha kararlı görünmektedir. Lojistik Regresyon ise hem sabit hem kuantil eşiklerde en başarılı modeldir.")
+    add_para(doc, "Kuantil eşik yaklaşımı sınıfları dengeli hale getirdiği için Random Forest ve K-En Yakın Komşu gibi modellerin performansı daha kararlı görünmektedir. Bu yaklaşım, ana modelin yerini almak için değil, sabit eşikteki sınıf yoğunlaşmasının model sonuçlarını nasıl etkilediğini karşılaştırmalı olarak incelemek için kullanılmıştır. Kuantil eşik risk sınıflarını veri seti içindeki göreli sıralamaya göre tanımladığı için sonuçlar mutlak risk aralıklarından farklı yorumlanmalıdır.")
+    add_para(doc, "Lojistik Regresyon modelinin kuantil eşikte de yüksek performans göstermesi, hedef sınıfların yine oluşturulan kompozit risk skoru mantığına dayanmasıyla uyumludur. Bu bulgu, modelin bağımsız bir dış risk etiketini keşfettiği anlamına değil, tasarlanan skor sisteminin sınıflandırma modelleri tarafından tutarlı biçimde öğrenilebildiğine işaret eder.")
     add_image(doc, "confusion_matrices_priority_fixed_without_year.png", "Şekil 8. Priority Fixed hedefi için confusion matrix sonuçları.", width=6.0)
     add_image(doc, "confusion_matrices_equal_fixed_without_year.png", "Şekil 9. Equal Fixed hedefi için confusion matrix sonuçları.", width=6.0)
     add_image(doc, "confusion_matrices_priority_quantile_without_year.png", "Şekil 10. Priority Quantile hedefi için confusion matrix sonuçları.", width=6.0)
@@ -408,26 +470,28 @@ def build():
     add_table(doc, ["Kriter", "Sabit Eşik", "Kuantil Eşik"], [
         ["Sınıf dengesi", "Medium sınıfına yığılma vardır.", "Yaklaşık dengeli dağılım üretir."],
         ["Yorumlanabilirlik", "0-1 skor aralığında sezgisel sınırlar sunar.", "Veri seti içi göreli sıralamayı öne çıkarır."],
-        ["En iyi model", "Logistic Regression", "Logistic Regression"],
+        ["En iyi model", "Lojistik Regresyon", "Lojistik Regresyon"],
         ["Ağaç modelleri", "Dengesiz sınıflardan etkilenir.", "Dengeli sınıflarda daha kararlı sonuç verir."],
         ["Metodolojik rol", "Ana model olarak sunulmuştur.", "Yan/karşılaştırmalı model olarak sunulmuştur."],
     ], widths=[1.7, 2.4, 2.4], font_size=8.8)
+    add_para(doc, "Bu karşılaştırmada sabit eşik, çalışmanın ana modeli olarak korunmuştur; çünkü risk skorunun teorik 0-1 aralığını Low, Medium ve High Risk düzeylerine doğrudan bağlar. Kuantil eşik ise sabit eşikte oluşan Medium Risk yoğunlaşmasına karşı duyarlılık analizi niteliğindedir. Dolayısıyla kuantil yaklaşım sınıf dengesini artırsa da, proje metodolojisinde ana modelin yerine geçirilmemiştir.")
     add_heading(doc, "7.5 Year Değişkeninin Etkisi", 2)
     add_table(doc, ["Hedef", "Model", "Year Yok F1", "Year Var F1", "Fark"], [
-        ["Priority Fixed", "Logistic Regression", "0.9644", "0.9573", "-0.0071"],
+        ["Priority Fixed", "Lojistik Regresyon", "0.9644", "0.9573", "-0.0071"],
         ["Priority Fixed", "Random Forest", "0.6948", "0.7095", "+0.0147"],
-        ["Equal Fixed", "Logistic Regression", "0.9626", "0.9626", "0.0000"],
+        ["Equal Fixed", "Lojistik Regresyon", "0.9626", "0.9626", "0.0000"],
         ["Equal Fixed", "Random Forest", "0.4683", "0.4412", "-0.0270"],
-        ["Priority Quantile", "Logistic Regression", "0.9944", "0.9944", "0.0000"],
+        ["Priority Quantile", "Lojistik Regresyon", "0.9944", "0.9944", "0.0000"],
         ["Priority Quantile", "Random Forest", "0.8559", "0.8569", "+0.0010"],
-        ["Equal Quantile", "Logistic Regression", "1.0000", "1.0000", "0.0000"],
+        ["Equal Quantile", "Lojistik Regresyon", "1.0000", "1.0000", "0.0000"],
         ["Equal Quantile", "Random Forest", "0.8579", "0.8367", "-0.0212"],
     ], widths=[1.7, 2.0, 1.0, 1.0, 0.8], font_size=8.5)
     add_para(doc, "Year değişkeni modele anlamlı ve tutarlı bir katkı sağlamamıştır. Risk skorları performans metriklerinden türetildiği için yıl bilgisi çoğu modelde yalnızca bağlamsal/gürültü niteliğinde kalmıştır. Bu nedenle nihai yorumlarda Year hariç model daha sade ve genellenebilir kabul edilmiştir.")
 
     add_heading(doc, "8. Sonuç ve Değerlendirme", 1)
     add_para(doc, "Bu projede 1800 gözlem ve 12 değişkenden oluşan Supplier Risk Assessment veri seti kullanılarak uçtan uca bir veri madenciliği çalışması yürütülmüştür. EDA sonucunda orijinal Risk_Category değişkeninin risk hedefi olarak doğrudan kullanılamayacağı görülmüş, bunun yerine seçilen yedi değişken üzerinden iki farklı kompozit risk skoru üretilmiştir.")
-    add_para(doc, "Sabit eşik yaklaşımı skor aralığının sezgisel yorumlanmasını sağlarken, kuantil eşik yaklaşımı sınıf dengesizliği sorununu azaltmıştır. Modelleme aşamasında en başarılı algoritma Lojistik Regresyon olmuştur. Bu sonuç, hedef sınıfların doğrusal ağırlıklı skor sisteminden türetilmesiyle uyumludur.")
+    add_para(doc, "Sabit eşik yaklaşımı çalışmanın ana teorik sınıflandırma yaklaşımıdır; çünkü 0-1 risk skoru aralığını yorumlanabilir Low, Medium ve High Risk düzeylerine ayırır. Kuantil eşik yaklaşımı ise sınıf dağılımına duyarlılığı ve model sonuçlarının robustluğunu değerlendirmek için kullanılan yan/karşılaştırmalı yaklaşımdır.")
+    add_para(doc, "Modelleme aşamasında en başarılı algoritma Lojistik Regresyon olmuştur. Bu sonuç, hedef sınıfların çalışmada oluşturulan doğrusal/ağırlıklı risk skorundan türetilmesiyle birlikte yorumlanmalıdır. Dolayısıyla yüksek performans, bağımsız bir dış risk etiketinin tamamen keşfedildiğini değil, oluşturulan risk skorlama sisteminin öğrenilebilir ve içsel olarak tutarlı olduğunu göstermektedir.")
     add_heading(doc, "8.1 Öğrenilenler", 2)
     add_bullets(doc, [
         "EDA sonuçlarının hedef değişken seçimini doğrudan etkileyebileceği görüldü.",
@@ -463,10 +527,7 @@ def build():
 
     add_heading(doc, "10. Ekler", 1)
     add_heading(doc, "10.1 Proje Dosyaları Envanteri", 2)
-    inventory = sorted([p.name for p in ROOT.iterdir() if p.is_file() and p.name not in {"build_odev_docx.py"}])
-    add_table(doc, ["Dosya", "Not"], [[name, "Proje klasöründe analiz edildi."] for name in inventory[:35]], widths=[3.6, 2.7], font_size=8)
-    if len(inventory) > 35:
-        add_para(doc, f"Ek dosyalar: {', '.join(inventory[35:])}")
+    add_table(doc, ["Dosya", "Açıklama"], appendix_inventory_rows(), widths=[3.8, 2.5], font_size=7.8)
     add_heading(doc, "10.2 Kod Ekleri", 2)
     for fn in ["eda_supplier_risk.py", "supplier_scoring.py", "supplier_scoring_quantile.py", "ml_modeling.py", "advanced_stats.py"]:
         add_code_appendix(doc, fn)
